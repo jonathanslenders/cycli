@@ -7,25 +7,23 @@ import csv
 from datetime import datetime
 
 import click
-from prompt_toolkit import Application, CommandLineInterface, AbortAction
-from prompt_toolkit.buffer import AcceptAction
+from prompt_toolkit.filters import Condition
 from prompt_toolkit.history import FileHistory
-from prompt_toolkit.shortcuts import create_prompt_layout, create_eventloop
-from prompt_toolkit.styles import PygmentsStyle
-from pygments.token import Token
+from prompt_toolkit.lexers import PygmentsLexer
+from prompt_toolkit.shortcuts import Prompt
+from prompt_toolkit.styles import style_from_pygments_cls
 
 from cycli import __version__
-from cycli.style import CypherLexer, CypherStyle
+from cycli.style import CypherLexer, cypher_style
 from cycli.completer import CypherCompleter, currently_inside_quotes
-from cycli.buffer import CypherBuffer, UserWantsOut
-from cycli.binder import CypherBinder
+from cycli.binder import key_bindings
 from cycli.driver import Neo4j, AuthError, ConnectionError
 from cycli.table import pretty_table
 from cycli.cypher import Cypher
 
 
-def get_tokens(x):
-  return [(Token.Prompt, "> ")]
+def get_prompt():
+  return '> '
 
 
 def split_queries_on_semicolons(queries):
@@ -74,6 +72,24 @@ class Cycli:
 
     csvfile.close()
 
+
+  def user_wants_out(self, text):
+    return any([
+      text.endswith(";"),
+      text.endswith("\n"),
+      text == "quit",
+      text == "exit",
+      text == "help",
+      text == "refresh",
+      text == "schema",
+      text == "schema-constraints",
+      text == "schema-indexes",
+      text == "schema-labels",
+      text == "schema-rels",
+      text.startswith("env"),
+      text.startswith("export ")
+    ])
+
   def run(self):
     labels = self.neo4j.get_labels()
     relationship_types = self.neo4j.get_relationship_types()
@@ -100,35 +116,24 @@ class Cycli:
     print("Neo4j version: {}".format(".".join(map(str, self.neo4j.neo4j_version))))
     print("Bug reports: https://github.com/nicolewhite/cycli/issues\n")
 
-    completer = CypherCompleter(labels, relationship_types, properties)
+    @Condition
+    def multiline():
+        return not self.user_wants_out(prompt.default_buffer.text)
 
-    layout = create_prompt_layout(
-      lexer=CypherLexer,
-      get_prompt_tokens=get_tokens,
+    prompt = Prompt(
+      message=get_prompt,
+      lexer=PygmentsLexer(CypherLexer),
+      multiline=multiline,
       reserve_space_for_menu=8,
-    )
-
-    buff = CypherBuffer(
-      accept_action=AcceptAction.RETURN_DOCUMENT,
-      history=FileHistory(filename=os.path.expanduser('~/.cycli_history')),
-      completer=completer,
+      completer=CypherCompleter(labels, relationship_types, properties),
       complete_while_typing=True,
-    )
-
-    application = Application(
-      style=PygmentsStyle(CypherStyle),
-      buffer=buff,
-      layout=layout,
-      on_exit=AbortAction.RAISE_EXCEPTION,
-      key_bindings_registry=CypherBinder.registry
-    )
-
-    cli = CommandLineInterface(application=application, eventloop=create_eventloop())
+      history=FileHistory(filename=os.path.expanduser('~/.cycli_history')),
+      style=cypher_style,
+      key_bindings=key_bindings)
 
     try:
       while True:
-        document = cli.run()
-        query = document.text
+        query = prompt.prompt()
         self.handle_query(query)
     except UserWantsOut:
       print("Goodbye!")
@@ -227,6 +232,10 @@ class Cycli:
 
       if run_n and error is False:
         print("Total duration: {} ms".format(total_duration))
+
+
+class UserWantsOut(Exception):
+  pass
 
 
 def print_help():

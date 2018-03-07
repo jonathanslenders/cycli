@@ -1,18 +1,17 @@
 from __future__ import unicode_literals
-from prompt_toolkit.key_binding.manager import KeyBindingManager
-from prompt_toolkit.keys import Keys
+from prompt_toolkit.key_binding import KeyBindings
 
-CypherBinder = KeyBindingManager()
+key_bindings = KeyBindings()
 
-@CypherBinder.registry.add_binding("{")
+@key_bindings.add("{")
 def curly_left(event):
-  b = event.cli.current_buffer
+  b = event.app.current_buffer
   b.insert_text("{")
   b.insert_text("}", move_cursor=False)
 
-@CypherBinder.registry.add_binding("}")
+@key_bindings.add("}")
 def curly_right(event):
-  b = event.cli.current_buffer
+  b = event.app.current_buffer
   char = b.document.current_char
 
   if char == "}":
@@ -20,15 +19,15 @@ def curly_right(event):
   else:
     b.insert_text("}")
 
-@CypherBinder.registry.add_binding("(")
+@key_bindings.add("(")
 def paren_left(event):
-  b = event.cli.current_buffer
+  b = event.app.current_buffer
   b.insert_text("(")
   b.insert_text(")", move_cursor=False)
 
-@CypherBinder.registry.add_binding(")")
+@key_bindings.add(")")
 def paren_right(event):
-  b = event.cli.current_buffer
+  b = event.app.current_buffer
   char = b.document.current_char
 
   if char == ")":
@@ -36,15 +35,15 @@ def paren_right(event):
   else:
     b.insert_text(")")
 
-@CypherBinder.registry.add_binding("[")
+@key_bindings.add("[")
 def bracket_left(event):
-  b = event.cli.current_buffer
+  b = event.app.current_buffer
   b.insert_text("[")
   b.insert_text("]", move_cursor=False)
 
-@CypherBinder.registry.add_binding("]")
+@key_bindings.add("]")
 def bracket_right(event):
-  b = event.cli.current_buffer
+  b = event.app.current_buffer
   char = b.document.current_char
 
   if char == "]":
@@ -52,9 +51,9 @@ def bracket_right(event):
   else:
     b.insert_text("]")
 
-@CypherBinder.registry.add_binding("'")
+@key_bindings.add("'")
 def apostrophe(event):
-  b = event.cli.current_buffer
+  b = event.app.current_buffer
   char = b.document.current_char
 
   if char == "'":
@@ -63,9 +62,9 @@ def apostrophe(event):
     b.insert_text("'")
     b.insert_text("'", move_cursor=False)
 
-@CypherBinder.registry.add_binding("\"")
+@key_bindings.add("\"")
 def quote(event):
-  b = event.cli.current_buffer
+  b = event.app.current_buffer
   char = b.document.current_char
 
   if char == "\"":
@@ -74,9 +73,9 @@ def quote(event):
     b.insert_text("\"")
     b.insert_text("\"", move_cursor=False)
 
-@CypherBinder.registry.add_binding("`")
+@key_bindings.add("`")
 def backtick(event):
-  b = event.cli.current_buffer
+  b = event.app.current_buffer
   char = b.document.current_char
 
   if char == "`":
@@ -85,9 +84,9 @@ def backtick(event):
     b.insert_text("`")
     b.insert_text("`", move_cursor=False)
 
-@CypherBinder.registry.add_binding(Keys.Backspace)
+@key_bindings.add('backspace')
 def backspace(event):
-  b = event.cli.current_buffer
+  b = event.app.current_buffer
   current_char = b.document.current_char
   before_char = b.document.char_before_cursor
 
