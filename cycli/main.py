@@ -10,7 +10,7 @@ import click
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.lexers import PygmentsLexer
-from prompt_toolkit.shortcuts import Prompt
+from prompt_toolkit.shortcuts import PromptSession
 from prompt_toolkit.styles import style_from_pygments_cls
 
 from cycli import __version__
@@ -120,7 +120,7 @@ class Cycli:
     def multiline():
         return not self.user_wants_out(prompt.default_buffer.text)
 
-    prompt = Prompt(
+    prompt = PromptSession(
       message=get_prompt,
       lexer=PygmentsLexer(CypherLexer),
       multiline=multiline,
